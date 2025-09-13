@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" layout:decorate="~{layout}">
+<head>
+    <title th:text="${post.title} + ' - BlogSpace'">Post Title - BlogSpace</title>
+    <meta name="description" th:content="${post.summary ?: post.getShortContent(150)}">
+    <link rel="stylesheet" th:href="@{/css/style.css}" href="/css/style.css">
+    <script src="../static/js/blog.js"></script>
+</head>
+<body>
+    <div layout:fragment="content">
+        <div class="post-view-container">
+            <div class="container">
+                <!-- Post Header -->
+                <article class="post-article">
+                    <header class="article-header">
+                        <div class="article-breadcrumb">
+                            <a th:href="@{/dashboard}" class="breadcrumb-link">
+                                <i class="fas fa-home"></i>
+                                Dashboard
+                            </a>
+                            <i class="fas fa-chevron-right"></i>
+                            <span>Post</span>
+                        </div>
+
+                        <h1 class="article-title" th:text="${post.title}">Post Title</h1>
+                        
+                        <div class="article-meta">
+                            <div class="author-section">
+                                <div class="author-avatar">
+                                    <span th:text="${post.author.firstName?.charAt(0)} + ${post.author.lastName?.charAt(0)}">A</span>
+                                </div>
+                                <div class="author-info">
+                                    <h3 class="author-name" th:text="${post.author.fullName}">Author Name</h3>
+                                    <div class="publish-info">
+                                        <span class="publish-date">
+                                            <i class="fas fa-calendar"></i>
+                                            <span th:text="${#temporals.format(post.createdAt, 'MMMM dd, yyyy')}">Date</span>
+                                        </span>
+                                        <span class="reading-time">
+                                            <i class="fas fa-clock"></i>
+                                            <span th:text="${#strings.length(post.content) / 200} + ' min read'">5 min read</span>
+                                        </span>
+                                        <span class="post-status">
+                                            <span th:if="${post.isPublished}" class="status-badge published">
+                                                <i class="fas fa-eye"></i> Published
+                                            </span>
+                                            <span th:unless="${post.isPublished}" class="status-badge draft">
+                                                <i class="fas fa-file-alt"></i> Draft
+                                            </span>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Action buttons for post owner -->
+                            <div th:if="${isOwner}" class="article-actions">
+                                <a th:href="@{'/posts/' + ${post.id} + '/edit'}" class="btn btn-outline btn-sm">
+                                    <i class="fas fa-edit"></i>
+                                    Edit
+                                </a>
+                                <div class="dropdown">
+                                    <button class="btn btn-outline btn-sm dropdown-toggle">
+                                        <i class="fas fa-ellipsis-h"></i>
+                                    </button>
+                                   <!-- Inside article-actions dropdown-menu -->
+<div class="dropdown-menu">
+    <a th:href="@{'/export/posts/' + ${post.id} + '/word'}" class="dropdown-item">
+        <i class="fas fa-download"></i>
+        Export to Word
+    </a>
+    <a th:href="@{'/export/posts/' + ${post.id} + '/pdf'}" class="dropdown-item">
+        <i class="fas fa-download"></i>
+        Export to PDF
+    </a>
+    <div class="dropdown-divider"></div>
+    <button class="dropdown-item text-danger" 
+            onclick="confirmDelete('[[${post.id}]]', '[[${post.title}]]')">
+        <i class="fas fa-trash"></i>
+        Delete Post
+    </button>
+</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tags -->
+                        <div th:if="${post.tags}" class="article-tags">
+                            <span th:each="tag : ${post.getTagArray()}" 
+                                  class="tag" 
+                                  th:text="${tag.trim()}">tag</span>
+                        </div>
+
+                        <!-- Summary -->
+                        <div th:if="${post.summary}" class="article-summary">
+                            <p th:text="${post.summary}">Post summary goes here...</p>
+                        </div>
+                    </header>
+
+                    <!-- Post Content -->
+                    <div class="article-content">
+                        <div class="content-body" th:utext="${post.content}">
+                            Post content will be displayed here...
+                        </div>
+                    </div>
+
+                    <!-- Post Footer -->
+                    <footer class="article-footer">
+                        <div class="footer-stats">
+                            <div class="stat-item">
+                                <i class="fas fa-eye"></i>
+                                <span>Reading time: <span th:text="${#strings.length(post.content) / 200}">5</span> minutes</span>
+                            </div>
+                            <div class="stat-item">
+                                <i class="fas fa-calendar"></i>
+                                <span>Last updated: <span th:text="${#temporals.format(post.updatedAt, 'MMM dd, yyyy')}">Date</span></span>
+                            </div>
+                        </div>
+
+                        <div class="share-section">
+                            <h4>Share this post</h4>
+                            <div class="share-buttons">
+                                <button class="share-btn twitter" onclick="shareOnTwitter()">
+                                    <i class="fab fa-twitter"></i>
+                                    Twitter
+                                </button>
+                                <button class="share-btn facebook" onclick="shareOnFacebook()">
+                                    <i class="fab fa-facebook"></i>
+                                    Facebook
+                                </button>
+                                <button class="share-btn linkedin" onclick="shareOnLinkedIn()">
+                                    <i class="fab fa-linkedin"></i>
+                                    LinkedIn
+                                </button>
+                                <button class="share-btn copy" onclick="copyLink()">
+                                    <i class="fas fa-link"></i>
+                                    Copy Link
+                                </button>
+                            </div>
+                        </div>
+                    </footer>
+                </article>
+
+                <!-- Navigation -->
+                <div class="post-navigation">
+                    <a th:href="@{/dashboard}" class="nav-btn">
+                        <i class="fas fa-arrow-left"></i>
+                        Back to Dashboard
+                    </a>
+                    <div th:if="${isOwner}" class="nav-actions">
+                        <a th:href="@{'/posts/' + ${post.id} + '/edit'}" class="nav-btn primary">
+                            <i class="fas fa-edit"></i>
+                            Edit Post
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Delete Confirmation Modal -->
+        <div id="deleteModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Delete Post</h3>
+                    <button class="modal-close" onclick="closeDeleteModal()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to delete this post?</p>
+                    <p class="text-muted">This action cannot be undone.</p>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="closeDeleteModal()">Cancel</button>
+                    <form id="deleteForm" method="post" style="display: inline;">
+                        <button type="submit" class="btn btn-danger">Delete Post</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function confirmDelete(postId, title) {
+            document.getElementById('deleteForm').action = `/blog/posts/${postId}/delete`;
+            document.getElementById('deleteModal').classList.add('active');
+        }
+        
+        function closeDeleteModal() {
+            document.getElementById('deleteModal').classList.remove('active');
+        }
+
+        function shareOnTwitter() {
+            const title = document.querySelector('.article-title').textContent;
+            const url = window.location.href;
+            window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(title)}&url=${encodeURIComponent(url)}`, '_blank');
+        }
+
+        function shareOnFacebook() {
+            const url = window.location.href;
+            window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, '_blank');
+        }
+
+        function shareOnLinkedIn() {
+            const title = document.querySelector('.article-title').textContent;
+            const url = window.location.href;
+            window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`, '_blank');
+        }
+
+        function copyLink() {
+            navigator.clipboard.writeText(window.location.href).then(() => {
+                const btn = document.querySelector('.share-btn.copy');
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+                btn.classList.add('copied');
+                
+                setTimeout(() => {
+                    btn.innerHTML = originalText;
+                    btn.classList.remove('copied');
+                }, 2000);
+            });
+        }
+
+        // Close modal on outside click
+        document.getElementById('deleteModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeDeleteModal();
+            }
+        });
+    </script>
+</body>
+</html>

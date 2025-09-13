@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" layout:decorate="~{layout}">
+<head>
+    <title th:text="${keyword} ? 'Search Results for \'' + ${keyword} + '\' - BlogSpace' : 'Search Posts - BlogSpace'">Search - BlogSpace</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}" href="/css/style.css">
+    <script src="../static/js/blog.js"></script>
+</head>
+<body>
+    <div layout:fragment="content">
+        <div class="search-container">
+            <div class="container">
+                <!-- Search Header -->
+                <div class="search-header">
+                    <div class="search-header-content">
+                        <h1>
+                            <span th:if="${keyword}">
+                                Search Results for "<span th:text="${keyword}">search term</span>"
+                            </span>
+                            <span th:unless="${keyword}">Search Posts</span>
+                        </h1>
+                        <p th:if="${keyword}" class="search-meta">
+                            Found <strong th:text="${totalPosts}">0</strong> 
+                            <span th:text="${totalPosts == 1} ? 'result' : 'results'">results</span>
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Enhanced Search Form -->
+                <div class="search-form-container">
+                    <form th:action="@{/search}" method="get" class="search-form" id="searchForm">
+                        <div class="search-input-wrapper">
+                            <div class="search-input-container">
+                                <i class="fas fa-search"></i>
+                                <input type="text" 
+                                       name="keyword" 
+                                       id="searchInput"
+                                       th:value="${keyword}"
+                                       placeholder="Search posts by title, content, or tags..." 
+                                       class="search-input">
+                                <button type="button" 
+                                        class="search-clear" 
+                                        onclick="clearSearch()"
+                                        th:style="${keyword} ? 'display: block;' : 'display: none;'">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                            <button type="submit" class="search-btn">
+                                <i class="fas fa-search"></i>
+                                Search
+                            </button>
+                        </div>
+                        
+                        <!-- Advanced Search Options -->
+                        <div class="search-filters">
+                            <div class="filter-group">
+                                <label for="sortBy">Sort by:</label>
+                                <select name="sortBy" id="sortBy" class="filter-select">
+                                    <option value="date" th:selected="${sortBy == 'date'}">Most Recent</option>
+                                    <option value="relevance" th:selected="${sortBy == 'relevance'}">Most Relevant</option>
+                                    <option value="title" th:selected="${sortBy == 'title'}">Title A-Z</option>
+                                </select>
+                            </div>
+                            
+                            <div th:if="${user}" class="filter-group">
+                                <label for="scope">Search in:</label>
+                                <select name="scope" id="scope" class="filter-select">
+                                    <option value="all" th:selected="${scope == 'all'}">All Posts</option>
+                                    <option value="my" th:selected="${scope == 'my'}">My Posts Only</option>
+                                    <option value="published" th:selected="${scope == 'published'}">Published Posts</option>
+                                </select>
+                            </div>
+                        </div>
+                    </form>
+
+                    <!-- Search Suggestions -->
+                    <div id="searchSuggestions" class="search-suggestions" style="display: none;"></div>
+                </div>
+
+                <!-- Popular Tags -->
+                <div th:if="${not keyword and not #lists.isEmpty(popularTags)}" class="popular-tags-section">
+                    <h3>Popular Tags</h3>
+                    <div class="popular-tags">
+                        <a th:each="tag : ${popularTags}" 
+                           th:href="@{/search(keyword=${tag})}" 
+                           class="tag-link"
+                           th:text="${tag}">tag</a>
+                    </div>
+                </div>
+
+                <!-- Search Results -->
+                <div class="search-results">
+                    <!-- Results Header -->
+                    <div th:if="${posts and not #lists.isEmpty(posts)}" class="results-header">
+                        <div class="results-info">
+                            <span class="results-count">
+                                Showing <strong th:text="${posts.size()}">0</strong> 
+                                of <strong th:text="${totalPosts}">0</strong> results
+                            </span>
+                        </div>
+                        <div class="view-options">
+                            <button class="view-btn active" data-view="list">
+                                <i class="fas fa-list"></i>
+                            </button>
+                            <button class="view-btn" data-view="grid">
+                                <i class="fas fa-th-large"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Results List -->
+                    <div th:if="${posts and not #lists.isEmpty(posts)}" class="results-list" id="resultsContainer">
+                        <article th:each="post : ${posts}" class="result-item">
+                            <div class="result-content">
+                                <header class="result-header">
+                                    <h2 class="result-title">
+                                        <a th:href="@{'/posts/' + ${post.id}}" th:text="${post.title}">Post Title</a>
+                                    </h2>
+                                    <div class="result-meta">
+                                        <div class="author-info">
+                                            <div class="author-avatar">
+                                                <span th:text="${post.author.firstName?.charAt(0)} + ${post.author.lastName?.charAt(0)}">A</span>
+                                            </div>
+                                            <span class="author-name" th:text="${post.author.fullName}">Author Name</span>
+                                        </div>
+                                        <div class="post-date">
+                                            <i class="fas fa-calendar"></i>
+                                            <span th:text="${#temporals.format(post.createdAt, 'MMM dd, yyyy')}">Date</span>
+                                        </div>
+                                        <div class="post-status">
+                                            <span th:if="${post.isPublished}" class="status-badge published">
+                                                <i class="fas fa-eye"></i> Published
+                                            </span>
+                                            <span th:unless="${post.isPublished}" class="status-badge draft">
+                                                <i class="fas fa-file-alt"></i> Draft
+                                            </span>
+                                        </div>
+                                    </div>
+                                </header>
+
+                                <div class="result-summary">
+                                    <p th:text="${post.summary ?: post.getShortContent(200)}">
+                                        Post summary or content preview...
+                                    </p>
+                                </div>
+
+                                <div th:if="${post.tags}" class="result-tags">
+                                    <i class="fas fa-tags"></i>
+                                    <span th:each="tag, iterStat : ${post.getTagArray()}" 
+                                          class="result-tag">
+                                        <a th:href="@{/search(keyword=${tag.trim()})}" 
+                                           th:text="${tag.trim()}">tag</a><span th:unless="${iterStat.last}">, </span>
+                                    </span>
+                                </div>
+
+                                <div class="result-actions">
+                                    <a th:href="@{'/posts/' + ${post.id}}" class="btn btn-outline btn-sm">
+                                        <i class="fas fa-eye"></i>
+                                        Read More
+                                    </a>
+                                    <div th:if="${user and user.id == post.author.id}" class="owner-actions">
+                                        <a th:href="@{'/posts/' + ${post.id} + '/edit'}" class="btn btn-ghost btn-sm">
+                                            <i class="fas fa-edit"></i>
+                                            Edit
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </article>
+                    </div>
+
+                    <!-- Empty State -->
+                    <div th:if="${keyword and (posts == null or #lists.isEmpty(posts))}" class="empty-search-state">
+                        <div class="empty-illustration">
+                            <i class="fas fa-search"></i>
+                        </div>
+                        <h3>No results found</h3>
+                        <p>We couldn't find any posts matching "<strong th:text="${keyword}">search term</strong>"</p>
+                        <div class="empty-actions">
+                            <button class="btn btn-outline" onclick="clearSearch()">
+                                <i class="fas fa-times"></i>
+                                Clear Search
+                            </button>
+                            <a th:if="${user}" th:href="@{/posts/create}" class="btn btn-primary">
+                                <i class="fas fa-plus"></i>
+                                Create New Post
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Default State (No Search) -->
+                    <div th:if="${not keyword}" class="search-default-state">
+                        <div class="default-illustration">
+                            <i class="fas fa-search"></i>
+                        </div>
+                        <h3>Search for Posts</h3>
+                        <p>Enter keywords to search through posts by title, content, or tags.</p>
+                        
+                        <!-- Quick Search Options -->
+                        <div class="quick-search">
+                            <h4>Try searching for:</h4>
+                            <div class="quick-search-tags">
+                                <button class="quick-tag" onclick="quickSearch('tutorial')">tutorial</button>
+                                <button class="quick-tag" onclick="quickSearch('javascript')">javascript</button>
+                                <button class="quick-tag" onclick="quickSearch('spring boot')">spring boot</button>
+                                <button class="quick-tag" onclick="quickSearch('web development')">web development</button>
+                            </div>
+                        </div>
+
+                        <!-- Recent Posts -->
+                        <div th:if="${recentPosts and not #lists.isEmpty(recentPosts)}" class="recent-posts">
+                            <h4>Recent Posts</h4>
+                            <div class="recent-posts-list">
+                                <div th:each="post : ${recentPosts}" class="recent-post-item">
+                                    <a th:href="@{'/posts/' + ${post.id}}" class="recent-post-link">
+                                        <h5 th:text="${post.title}">Post Title</h5>
+                                        <span class="recent-post-date" 
+                                              th:text="${#temporals.format(post.createdAt, 'MMM dd')}">Date</span>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pagination -->
+                    <div th:if="${totalPages > 1}" class="pagination-wrapper">
+                        <div class="pagination">
+                            <a th:if="${currentPage > 0}" 
+                               th:href="@{/search(keyword=${keyword}, page=${currentPage - 1}, sortBy=${sortBy}, scope=${scope})}" 
+                               class="page-btn">
+                                <i class="fas fa-chevron-left"></i>
+                            </a>
+                            
+                            <span th:each="i : ${#numbers.sequence(0, totalPages - 1)}" 
+                                  th:if="${i >= currentPage - 2 and i <= currentPage + 2}">
+                                <a th:href="@{/search(keyword=${keyword}, page=${i}, sortBy=${sortBy}, scope=${scope})}" 
+                                   class="page-btn"
+                                   th:classappend="${i == currentPage} ? 'active' : ''"
+                                   th:text="${i + 1}">1</a>
+                            </span>
+                            
+                            <a th:if="${currentPage < totalPages - 1}" 
+                               th:href="@{/search(keyword=${keyword}, page=${currentPage + 1}, sortBy=${sortBy}, scope=${scope})}" 
+                               class="page-btn">
+                                <i class="fas fa-chevron-right"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Enhanced search functionality
+        function clearSearch() {
+            document.getElementById('searchInput').value = '';
+            window.location.href = '/blog/search';
+        }
+
+        function quickSearch(term) {
+            document.getElementById('searchInput').value = term;
+            document.getElementById('searchForm').submit();
+        }
+
+        // Auto-submit form when filters change
+        document.getElementById('sortBy')?.addEventListener('change', function() {
+            document.getElementById('searchForm').submit();
+        });
+
+        document.getElementById('scope')?.addEventListener('change', function() {
+            document.getElementById('searchForm').submit();
+        });
+
+        // View toggle functionality
+        document.querySelectorAll('.view-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const view = btn.dataset.view;
+                const container = document.getElementById('resultsContainer');
+                
+                // Update active state
+                document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                
+                // Toggle view
+                if (container) {
+                    container.className = view === 'grid' ? 'results-grid' : 'results-list';
+                }
+            });
+        });
+
+        // Search suggestions (mock implementation)
+        const searchInput = document.getElementById('searchInput');
+        const suggestions = document.getElementById('searchSuggestions');
+
+        searchInput?.addEventListener('input', function() {
+            const query = this.value.trim();
+            
+            if (query.length >= 2) {
+                // Mock suggestions - in real app, this would be an API call
+                const mockSuggestions = [
+                    'JavaScript fundamentals',
+                    'Spring Boot tutorial',
+                    'Web development best practices',
+                    'Database optimization'
+                ].filter(s => s.toLowerCase().includes(query.toLowerCase()));
+                
+                if (mockSuggestions.length > 0) {
+                    suggestions.innerHTML = mockSuggestions
+                        .map(s => `<div class="search-suggestion" onclick="selectSuggestion('${s}')">${s}</div>`)
+                        .join('');
+                    suggestions.style.display = 'block';
+                } else {
+                    suggestions.style.display = 'none';
+                }
+            } else {
+                suggestions.style.display = 'none';
+            }
+        });
+
+        function selectSuggestion(suggestion) {
+            searchInput.value = suggestion;
+            suggestions.style.display = 'none';
+            document.getElementById('searchForm').submit();
+        }
+
+        // Hide suggestions when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!searchInput.contains(e.target) && !suggestions.contains(e.target)) {
+                suggestions.style.display = 'none';
+            }
+        });
+
+        // Highlight search terms in results
+        function highlightSearchTerms() {
+            const keyword = '[[${keyword}]]';
+            if (!keyword) return;
+            
+            const terms = keyword.toLowerCase().split(' ');
+            const resultItems = document.querySelectorAll('.result-item');
+            
+            resultItems.forEach(item => {
+                const title = item.querySelector('.result-title a');
+                const summary = item.querySelector('.result-summary p');
+                
+                terms.forEach(term => {
+                    if (term.length > 2) {
+                        const regex = new RegExp(`(${term})`, 'gi');
+                        if (title) {
+                            title.innerHTML = title.innerHTML.replace(regex, '<mark>$1</mark>');
+                        }
+                        if (summary) {
+                            summary.innerHTML = summary.innerHTML.replace(regex, '<mark>$1</mark>');
+                        }
+                    }
+                });
+            });
+        }
+
+        // Run highlighting after page load
+        document.addEventListener('DOMContentLoaded', highlightSearchTerms);
+    </script>
+</body>
+</html>

@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${title} ? ${title} + ' - Blog Application' : 'Blog Application'">Blog Application</title>
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="../static/js/blog.js"></script>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <a th:href="@{/dashboard}" class="brand-link">
+                    <i class="fas fa-feather-alt"></i>
+                    <span>BlogSpace</span>
+                </a>
+            </div>
+            
+            <div class="nav-menu">
+                <div th:if="${user}" class="nav-items">
+                    <a th:href="@{/dashboard}" class="nav-link">
+                        <i class="fas fa-home"></i>
+                        Dashboard
+                    </a>
+                    <a th:href="@{/posts/create}" class="nav-link">
+                        <i class="fas fa-plus"></i>
+                        New Post
+                    </a>
+                    <a th:href="@{/search}" class="nav-link">
+                        <i class="fas fa-search"></i>
+                        Search
+                    </a>
+                    
+                    <div class="user-dropdown">
+                        <button class="user-btn">
+                            <div class="user-avatar">
+                                <span th:text="${user.firstName?.charAt(0)} + ${user.lastName?.charAt(0)}">U</span>
+                            </div>
+                            <span th:text="${user.fullName}">User</span>
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                        <div class="dropdown-menu">
+                            <a th:href="@{/export/posts/excel}" class="dropdown-item">
+                                <i class="fas fa-file-excel"></i>
+                                Export to Excel
+                            </a>
+                            <div class="dropdown-divider"></div>
+                            <a th:href="@{/auth/logout}" class="dropdown-item">
+                                <i class="fas fa-sign-out-alt"></i>
+                                Logout
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <div th:unless="${user}" class="nav-items">
+                    <a th:href="@{/auth/login}" class="nav-link">Login</a>
+                    <a th:href="@{/auth/register}" class="btn btn-primary">Get Started</a>
+                </div>
+            </div>
+            
+            <div class="mobile-menu-btn">
+                <i class="fas fa-bars"></i>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Alert Messages -->
+    <div class="alerts-container">
+        <div th:if="${success}" class="alert alert-success">
+            <i class="fas fa-check-circle"></i>
+            <span th:text="${success}"></span>
+            <button class="alert-close">&times;</button>
+        </div>
+        
+        <div th:if="${error}" class="alert alert-error">
+            <i class="fas fa-exclamation-circle"></i>
+            <span th:text="${error}"></span>
+            <button class="alert-close">&times;</button>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div layout:fragment="content">
+            <!-- Page content will be inserted here -->
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <div class="footer-brand">
+                        <i class="fas fa-feather-alt"></i>
+                        <span>BlogSpace</span>
+                    </div>
+                    <p>Express your thoughts, share your stories, and connect with readers worldwide.</p>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Quick Links</h4>
+                    <ul>
+                        <li><a th:href="@{/dashboard}">Dashboard</a></li>
+                        <li><a th:href="@{/posts/create}">Write Post</a></li>
+                        <li><a th:href="@{/search}">Search</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Export Options</h4>
+                    <ul>
+                        <li><a th:href="@{/export/posts/excel}">Excel Export</a></li>
+                        <li><span>Word Export</span></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="footer-bottom">
+                <p>&copy; 2024 BlogSpace. Made with <i class="fas fa-heart"></i> for writers.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script th:src="@{/js/blog.js}"></script>
+</body>
+</html>

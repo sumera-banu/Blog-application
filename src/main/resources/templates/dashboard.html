@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" layout:decorate="~{layout}">
+<head>
+    <link rel="stylesheet" th:href="@{/css/style.css}" href="/css/style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet">
+    <title>Dashboard - BlogSpace</title>
+    <script src="../static/js/blog.js"></script>
+</head>
+<body>
+    <div layout:fragment="content">
+        <!-- Alerts -->
+        <div class="alerts-container">
+            <div th:if="${success}" class="alert alert-success">
+                <span th:text="${success}"></span>
+                <button class="alert-close" onclick="this.parentElement.style.display='none'">&times;</button>
+            </div>
+            <div th:if="${error}" class="alert alert-error">
+                <span th:text="${error}"></span>
+                <button class="alert-close" onclick="this.parentElement.style.display='none'">&times;</button>
+            </div>
+        </div>
+
+        <!-- Dashboard Header -->
+        <div class="dashboard-header">
+            <div class="container">
+                <div class="header-content">
+                    <div class="welcome-section">
+                        <h1>Welcome back, <span th:text="${user.firstName}">User</span>!</h1>
+                        <p>Ready to share your thoughts with the world?</p>
+                    </div>
+                    <div class="quick-actions">
+                        <a th:href="@{/posts/create}" class="btn btn-primary">
+                            <i class="fas fa-plus"></i>
+                            New Post
+                        </a>
+                        <a th:href="@{/search}" class="btn btn-outline">
+                            <i class="fas fa-search"></i>
+                            Search Posts
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dashboard Stats -->
+        <div class="dashboard-stats">
+            <div class="container">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-edit"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 th:text="${totalPosts ?: 0}">0</h3>
+                            <p>Total Posts</p>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-eye"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 th:text="${#lists.size(posts.?[isPublished == true]) ?: 0}">0</h3>
+                            <p>Published</p>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-draft2digital"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 th:text="${#lists.size(posts.?[isPublished == false]) ?: 0}">0</h3>
+                            <p>Drafts</p>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-calendar"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3>This Month</h3>
+                            <p>Recent Activity</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Posts Section -->
+        <div class="dashboard-content">
+            <div class="container">
+                <div class="content-header">
+                    <h2>Your Posts</h2>
+                    <div class="content-actions">
+                        <div class="view-options">
+                            <button class="view-btn active" data-view="grid">
+                                <i class="fas fa-th-large"></i>
+                            </button>
+                            <button class="view-btn" data-view="list">
+                                <i class="fas fa-list"></i>
+                            </button>
+                        </div>
+                        <div class="filter-dropdown">
+                            <select id="postFilter">
+                                <option value="all">All Posts</option>
+                                <option value="published">Published</option>
+                                <option value="drafts">Drafts</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Posts Grid -->
+                <div th:if="${posts != null and not #lists.isEmpty(posts)}" class="posts-grid" id="postsContainer">
+                    <div th:each="post : ${posts}" 
+                         class="post-card" 
+                         th:data-status="${post.isPublished} ? 'published' : 'draft'">
+                        <div class="post-header">
+                            <div class="post-status">
+                                <span th:if="${post.isPublished}" class="status-badge published">
+                                    <i class="fas fa-eye"></i> Published
+                                </span>
+                                <span th:unless="${post.isPublished}" class="status-badge draft">
+                                    <i class="fas fa-file-alt"></i> Draft
+                                </span>
+                            </div>
+                            <div class="post-actions">
+                                <div class="action-dropdown">
+                                    <button class="action-btn">
+                                        <i class="fas fa-ellipsis-h"></i>
+                                    </button>
+                                    <div class="dropdown-menu">
+    <a th:href="@{'/posts/' + ${post.id}}" class="dropdown-item">
+        <i class="fas fa-eye"></i> View
+    </a>
+    <a th:href="@{'/posts/' + ${post.id} + '/edit'}" class="dropdown-item">
+        <i class="fas fa-edit"></i> Edit
+    </a>
+    <a th:href="@{'/export/posts/' + ${post.id} + '/word'}" class="dropdown-item">
+        <i class="fas fa-download"></i> Export to Word
+    </a>
+    <a th:href="@{'/export/posts/' + ${post.id} + '/pdf'}" class="dropdown-item">
+        <i class="fas fa-download"></i> Export to PDF
+    </a>
+    <div class="dropdown-divider"></div>
+    <button class="dropdown-item text-danger" 
+            onclick="confirmDelete('[[${post.id}]]', '[[${post.title}]]')">
+        <i class="fas fa-trash"></i> Delete
+    </button>
+</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="post-content">
+                            <h3 class="post-title">
+                                <a th:href="@{'/posts/' + ${post.id}}" th:text="${post.title}">Post Title</a>
+                            </h3>
+                            
+                            <p class="post-summary" th:text="${post.summary ?: post.getShortContent(150)}">
+                                Post summary or content preview...
+                            </p>
+                            
+                            <div th:if="${post.tags}" class="post-tags">
+                                <span th:each="tag, iterStat : ${post.getTagArray()}" 
+                                      class="tag" 
+                                      th:text="${tag.trim()}">tag</span>
+                            </div>
+                        </div>
+
+                        <div class="post-meta">
+                            <div class="meta-info">
+                                <i class="fas fa-calendar"></i>
+                                <span th:text="${#temporals.format(post.createdAt, 'MMM dd, yyyy')}">Date</span>
+                            </div>
+                            <div class="meta-info">
+                                <i class="fas fa-clock"></i>
+                                <span th:text="${#temporals.format(post.updatedAt, 'HH:mm')}">Time</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Empty State -->
+                <div th:if="${posts == null or #lists.isEmpty(posts)}" class="empty-state">
+                    <div class="empty-illustration">
+                        <i class="fas fa-file-alt"></i>
+                    </div>
+                    <h3>No posts yet</h3>
+                    <p>Start writing your first blog post to see it here.</p>
+                    <a th:href="@{/posts/create}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i>
+                        Create Your First Post
+                    </a>
+                </div>
+
+                <!-- Pagination -->
+                <div th:if="${totalPages > 1}" class="pagination-wrapper">
+                    <div class="pagination">
+                        <a th:if="${currentPage > 0}" 
+                           th:href="@{/dashboard(page=${currentPage - 1})}" 
+                           class="page-btn">
+                            <i class="fas fa-chevron-left"></i>
+                        </a>
+                        
+                        <span th:each="i : ${#numbers.sequence(0, totalPages - 1)}" 
+                              th:if="${i >= currentPage - 2 and i <= currentPage + 2}">
+                            <a th:href="@{/dashboard(page=${i})}" 
+                               class="page-btn"
+                               th:classappend="${i == currentPage} ? 'active' : ''"
+                               th:text="${i + 1}">1</a>
+                        </span>
+                        
+                        <a th:if="${currentPage < totalPages - 1}" 
+                           th:href="@{/dashboard(page=${currentPage + 1})}" 
+                           class="page-btn">
+                            <i class="fas fa-chevron-right"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Delete Confirmation Modal -->
+        <div id="deleteModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Delete Post</h3>
+                    <button class="modal-close" onclick="closeDeleteModal()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="warning-content">
+                        <div class="warning-icon">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <div class="warning-text">
+                            <p>Are you sure you want to delete "<span id="postTitle"></span>"?</p>
+                            <p class="text-muted">This action cannot be undone.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="closeDeleteModal()">Cancel</button>
+                    <form id="deleteForm" method="post" style="display: inline;">
+                        <button type="submit" class="btn btn-danger">Delete Post</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function confirmDelete(postId, title) {
+            document.getElementById('postTitle').textContent = title;
+            document.getElementById('deleteForm').action = `/blog/posts/${postId}/delete`;
+            document.getElementById('deleteModal').classList.add('active');
+        }
+        
+        function closeDeleteModal() {
+            document.getElementById('deleteModal').classList.remove('active');
+        }
+        
+        // Close modal when clicking outside
+        document.getElementById('deleteModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeDeleteModal();
+            }
+        });
+    </script>
+</body>
+</html>

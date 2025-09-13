@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" layout:decorate="~{layout}">
+<head>
+    <title>Edit Post - BlogSpace</title>
+    <!-- Rich Text Editor -->
+    <link rel="stylesheet" th:href="@{/css/style.css}" href="/css/style.css">
+     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.7.2/tinymce.min.js"></script>
+    <script src="../static/js/blog.js"></script>
+    </head>
+<body>
+    <div layout:fragment="content">
+        <div class="editor-container">
+            <div class="container">
+                <!-- Success/Error Alerts -->
+                <div th:if="${success}" class="alert alert-success">
+                    <span th:text="${success}"></span>
+               </div>
+                <div th:if="${error}" class="alert alert-error">
+                    <span th:text="${error}"></span>
+                </div>
+
+                <!-- Editor Header -->
+                <div class="editor-header">
+                    <div class="header-left">
+                        <a th:href="@{/dashboard}" class="back-btn">
+                            <i class="fas fa-arrow-left"></i>
+                            Back to Dashboard
+                        </a>
+                    </div>
+                    <div class="header-center">
+                        <h1>Edit Post</h1>
+                    </div>
+                    <div class="header-right">
+                        <div class="save-status">
+                            <i class="fas fa-save"></i>
+                            <span>Auto-saving...</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Post Form -->
+                <form th:action="@{'/posts/' + ${post.id} + '/edit'}" 
+                      th:object="${postDto}" 
+                      method="post" 
+                      class="post-form">
+                    
+                    <!-- Title Section -->
+                    <div class="form-section">
+                        <div class="form-group title-group">
+                            <input type="text" 
+                                   id="title" 
+                                   th:field="*{title}"
+                                   class="title-input" 
+                                   placeholder="Enter your post title..."
+                                   maxlength="255"
+                                   required>
+                            <div class="char-count">
+                                <span id="titleCount" th:text="${#strings.length(postDto.title ?: '')}">0</span>/255
+                            </div>
+                            <span th:if="${#fields.hasErrors('title')}" 
+                                  th:errors="*{title}" 
+                                  class="error-text"></span>
+                        </div>
+                    </div>
+
+                    <!-- Content Editor -->
+                    <div class="form-section">
+                        <div class="form-group">
+                            <label for="content" class="form-label">Content</label>
+                            <textarea id="content" 
+                                      th:field="*{content}"
+                                      class="content-editor"
+                                      required></textarea>
+                            <span th:if="${#fields.hasErrors('content')}" 
+                                  th:errors="*{content}" 
+                                  class="error-text"></span>
+                        </div>
+                    </div>
+
+                    <!-- Post Settings -->
+                    <div class="form-section">
+                        <div class="settings-grid">
+                            <!-- Summary -->
+                            <div class="form-group">
+                                <label for="summary" class="form-label">Summary (Optional)</label>
+                                <textarea id="summary" 
+                                          th:field="*{summary}"
+                                          class="form-control"
+                                          rows="3"
+                                          placeholder="Write a brief summary of your post..."
+                                          maxlength="500"></textarea>
+                                <div class="char-count">
+                                    <span id="summaryCount" th:text="${#strings.length(postDto.summary ?: '')}">0</span>/500
+                                </div>
+                            </div>
+
+                            <!-- Tags -->
+                            <div class="form-group">
+                                <label for="tags" class="form-label">Tags</label>
+                                <div class="tags-input-wrapper">
+                                    <input type="text" 
+                                           id="tags" 
+                                           th:field="*{tags}"
+                                           class="form-control"
+                                           placeholder="Add tags separated by commas..."
+                                           maxlength="500">
+                                    <div class="tags-help">
+                                        <i class="fas fa-info-circle"></i>
+                                        Use commas to separate tags
+                                    </div>
+                                </div>
+                                <div class="tags-preview" id="tagsPreview"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Post Status Info -->
+                    <div class="form-section">
+                        <div class="post-status-info">
+                            <div class="status-card">
+                                <div class="status-header">
+                                    <h4>Post Status</h4>
+                                    <span th:if="${post.isPublished}" class="status-badge published">
+                                        <i class="fas fa-eye"></i> Published
+                                    </span>
+                                    <span th:unless="${post.isPublished}" class="status-badge draft">
+                                        <i class="fas fa-file-alt"></i> Draft
+                                    </span>
+                                </div>
+                                <div class="status-details">
+                                    <div class="detail-item">
+                                        <strong>Created:</strong> 
+                                        <span th:text="${#temporals.format(post.createdAt, 'MMMM dd, yyyy ''at'' HH:mm')}">Date</span>
+                                    </div>
+                                    <div class="detail-item">
+                                        <strong>Last Updated:</strong> 
+                                        <span th:text="${#temporals.format(post.updatedAt, 'MMMM dd, yyyy ''at'' HH:mm')}">Date</span>
+                                    </div>
+                                    <div class="detail-item">
+                                        <strong>Author:</strong> 
+                                        <span th:text="${post.author.fullName}">Author Name</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Publishing Options -->
+                    <div class="form-section">
+                        <div class="publishing-options">
+                            <div class="publish-toggle">
+                                <label class="toggle-wrapper">
+                                    <input type="checkbox" 
+                                           th:field="*{isPublished}"
+                                           id="isPublished">
+                                    <span class="toggle-slider"></span>
+                                    <span class="toggle-label">Publish changes</span>
+                                </label>
+                                <p class="toggle-description">
+                                    When enabled, your changes will be visible to everyone. 
+                                    Otherwise, the post will remain in its current state.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="form-actions">
+                        <!-- Inside form-actions actions-left -->
+<div class="actions-left">
+    <button type="button" class="btn btn-secondary" onclick="saveDraft()">
+        <i class="fas fa-save"></i>
+        Save Draft
+    </button>
+    <button type="button" class="btn btn-outline" onclick="previewPost()">
+        <i class="fas fa-eye"></i>
+        Preview Changes
+    </button>
+    <a th:href="@{'/posts/' + ${post.id}}" class="btn btn-ghost">
+        <i class="fas fa-eye"></i>
+        View Current Post
+    </a>
+    <a th:href="@{'/export/posts/' + ${post.id} + '/pdf'}" class="btn btn-outline">
+        <i class="fas fa-download"></i>
+        Export to PDF
+    </a>
+</div>
+                        <div class="actions-right">
+                            <a th:href="@{/dashboard}" class="btn btn-ghost">Cancel</a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i>
+                                <span id="publishBtnText">Update Post</span>
+                            </button>
+                            <!-- New Publish Now Button -->
+                            <form th:action="@{'/posts/' + ${post.id} + '/publish'}" method="post" style="display: inline;">
+                                <button type="submit" class="btn btn-success">
+                                    <i class="fas fa-globe"></i>
+                                    Publish Now
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </form>
+
+                <!-- Danger Zone -->
+                <div class="danger-zone">
+                    <div class="danger-card">
+                        <div class="danger-header">
+                            <h4>
+                                <i class="fas fa-exclamation-triangle"></i>
+                                Danger Zone
+                            </h4>
+                        </div>
+                        <div class="danger-content">
+                            <p>Once you delete a post, there is no going back. Please be certain.</p>
+                            <button type="button" 
+                                    class="btn btn-danger" 
+                                    onclick="confirmDelete('[[${post.id}]]', '[[${post.title}]]')">
+                                <i class="fas fa-trash"></i>
+                                Delete this post
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Preview Modal -->
+        <div id="previewModal" class="modal preview-modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Post Preview</h3>
+                    <button class="modal-close" onclick="closePreview()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <article class="preview-article">
+                        <header class="article-header">
+                            <h1 id="previewTitle">Post Title</h1>
+                            <div class="article-meta">
+                                <div class="author-info">
+                                    <div class="author-avatar">
+                                        <span th:text="${user.firstName?.charAt(0)} + ${user.lastName?.charAt(0)}">U</span>
+                                    </div>
+                                    <div class="author-details">
+                                        <span class="author-name" th:text="${user.fullName}">Author Name</span>
+                                        <span class="publish-date">Today</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="previewTags" class="article-tags"></div>
+                        </header>
+                        <div class="article-content">
+                            <div id="previewSummary" class="article-summary"></div>
+                            <div id="previewContent" class="article-body"></div>
+                        </div>
+                    </article>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="closePreview()">Close Preview</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Delete Confirmation Modal -->
+        <div id="deleteModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Delete Post</h3>
+                    <button class="modal-close" onclick="closeDeleteModal()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="warning-content">
+                        <div class="warning-icon">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <div class="warning-text">
+                            <p>Are you sure you want to delete "<span id="postTitle"></span>"?</p>
+                            <p class="text-muted">This action cannot be undone. The post will be permanently removed from your blog.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="closeDeleteModal()">Cancel</button>
+                    <form id="deleteForm" method="post" style="display: inline;">
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-trash"></i>
+                            Delete Post
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize TinyMCE for editing
+        tinymce.init({
+            selector: '#content',
+            height: 400,
+            menubar: false,
+            plugins: [
+                'advlist', 'autolink', 'lists', 'link', 'image', 'charmap',
+                'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
+                'insertdatetime', 'media', 'table', 'preview', 'help', 'wordcount'
+            ],
+            toolbar: 'undo redo | blocks | ' +
+                'bold italic forecolor | alignleft aligncenter ' +
+                'alignright alignjustify | bullist numlist outdent indent | ' +
+                'removeformat | help',
+            content_style: `
+                body { 
+                    font-family: Inter, -apple-system, BlinkMacSystemFont, sans-serif; 
+                    font-size: 16px; 
+                    line-height: 1.6; 
+                    color: #374151;
+                }
+                h1, h2, h3, h4, h5, h6 { 
+                    font-family: 'Playfair Display', serif; 
+                    color: #111827; 
+                }
+            `,
+            setup: function(editor) {
+                editor.on('input', function() {
+                    updateSaveStatus();
+                });
+            }
+        });
+
+        // Character counting and other interactions
+        document.getElementById('title').addEventListener('input', function() {
+            const count = this.value.length;
+            document.getElementById('titleCount').textContent = count;
+            
+            // Update button text based on publish status
+            const publishBtn = document.getElementById('publishBtnText');
+            const isPublished = document.getElementById('isPublished').checked;
+            publishBtn.textContent = isPublished ? 'Update & Publish' : 'Update Draft';
+        });
+
+        document.getElementById('summary').addEventListener('input', function() {
+            const count = this.value.length;
+            document.getElementById('summaryCount').textContent = count;
+        });
+
+        // Tags preview
+        document.getElementById('tags').addEventListener('input', function() {
+            const tags = this.value.split(',').map(tag => tag.trim()).filter(tag => tag);
+            const preview = document.getElementById('tagsPreview');
+            
+            if (tags.length > 0) {
+                preview.innerHTML = tags.map(tag => 
+                    `<span class="tag-preview">${tag}</span>`
+                ).join('');
+                preview.style.display = 'block';
+            } else {
+                preview.style.display = 'none';
+            }
+        });
+
+        // Publish toggle
+        document.getElementById('isPublished').addEventListener('change', function() {
+            const publishBtn = document.getElementById('publishBtnText');
+            publishBtn.textContent = this.checked ? 'Update & Publish' : 'Update Draft';
+        });
+
+        // Initialize tags preview on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const tagsInput = document.getElementById('tags');
+            if (tagsInput && tagsInput.value) {
+                tagsInput.dispatchEvent(new Event('input'));
+            }
+        });
+
+        // Auto-save status
+        function updateSaveStatus() {
+            const status = document.querySelector('.save-status span');
+            status.textContent = 'Saving...';
+            
+            setTimeout(() => {
+                status.textContent = 'Saved';
+            }, 1000);
+        }
+    </script>
+</body>
+</html>
